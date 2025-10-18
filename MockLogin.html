@@ -155,13 +155,13 @@
 
         console.log("✅ Alexa Code:", code);
 
-        // Step 3️⃣ — Redirect back to Alexa with code & state
-        let redirect = `${redirectUri}?code=${encodeURIComponent(code)}`;
-        if (state) redirect += `&state=${encodeURIComponent(state)}`;
-        console.log("🚀 Redirecting to:", redirect);
+        // // Step 3️⃣ — Redirect back to Alexa with code & state
+        // let redirect = `${redirectUri}?code=${encodeURIComponent(code)}`;
+        // if (state) redirect += `&state=${encodeURIComponent(state)}`;
+        // console.log("🚀 Redirecting to:", redirect);
 
-        loadingDiv.textContent = "Linking your Alexa account...";
-        window.location.href = redirect;
+        // loadingDiv.textContent = "Linking your Alexa account...";
+        // window.location.href = redirect;
 
       } catch (err) {
         console.error("❌ Error:", err);
