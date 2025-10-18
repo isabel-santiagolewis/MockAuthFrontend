@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,14 +16,16 @@
       height: 100vh;
       margin: 0;
     }
+
     .login-card {
       width: 400px;
       padding: 2rem;
       border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
       text-align: center;
       background-color: #fff;
     }
+
     .icon {
       width: 70px;
       height: 70px;
@@ -35,14 +38,17 @@
       color: #7b68ee;
       font-size: 2rem;
     }
+
     h2 {
       margin: 0;
       color: #7b68ee;
     }
+
     p {
       margin-top: 0.5rem;
       color: #666;
     }
+
     input {
       width: 100%;
       padding: 0.75rem;
@@ -51,6 +57,7 @@
       border-radius: 8px;
       font-size: 1rem;
     }
+
     button {
       width: 100%;
       margin-top: 1.5rem;
@@ -63,13 +70,16 @@
       cursor: pointer;
       transition: background 0.3s;
     }
+
     button:hover {
       background-color: #6a5acd;
     }
+
     .error {
       color: #d33;
       margin-top: 1rem;
     }
+
     .loading {
       color: #7b68ee;
       margin-top: 1rem;
@@ -77,20 +87,21 @@
     }
   </style>
 </head>
+
 <body>
   <div class="login-card">
     <div class="icon">🩺</div>
     <h2>CareConnect</h2>
     <p>Closer Connections. Better Care.</p>
-    
+
     <input id="email" type="email" placeholder="Email" required />
     <input id="password" type="password" placeholder="Password" required />
     <button id="loginBtn">Log In</button>
-    
+
     <div id="loading" class="loading"></div>
     <div id="error" class="error"></div>
   </div>
-  
+
   <script>
     const backendBase = "https://6fa48e946f24.ngrok-free.app"; // ✅ your ngrok base URL
     const loginEndpoint = `${backendBase}/v1/api/auth/login`;
@@ -100,6 +111,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const redirectUri = urlParams.get("redirect_uri") || "https://pitangui.amazon.com/api/skill/link/M1VZ06KRKERWBD";
     const state = urlParams.get("state") || "mock-state";
+    const success = urlParams.get("success");
 
     const loginBtn = document.getElementById("loginBtn");
     const errorDiv = document.getElementById("error");
@@ -123,7 +135,7 @@
         // Step 1️⃣ — Regular login
         const response = await fetch(loginEndpoint, {
           method: "POST",
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
             "ngrok-skip-browser-warning": "true"
           },
@@ -171,6 +183,23 @@
         loginBtn.disabled = false;
       }
     });
+
+    const loginCard = document.querySelector(".login-card");
+
+    if (success === "true") {
+      // Replace the card content with the success message
+      loginCard.innerHTML = `
+        <div class="icon">🎉</div>
+        <h2>CareConnect Linked!</h2>
+        <p>Your CareConnect account and Alexa are now connected.</p>
+        <p style="margin-top:1rem; color:#555;">
+        Try saying: <br>
+        <b>“Alexa, ask CareConnect to add an appointment to my calendar.”</b>
+        </p>
+        <button id="doneBtn">Done</button>
+      `;
+    }
   </script>
 </body>
+
 </html>
