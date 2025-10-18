@@ -70,6 +70,11 @@
       color: #d33;
       margin-top: 1rem;
     }
+    .loading {
+      color: #7b68ee;
+      margin-top: 1rem;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -82,55 +87,88 @@
     <input id="password" type="password" placeholder="Password" required />
     <button id="loginBtn">Log In</button>
     
+    <div id="loading" class="loading"></div>
     <div id="error" class="error"></div>
   </div>
   
   <script>
-    const backendBase = "https://3eff64f367bc.ngrok-free.app"; // 🔧 Replace with your ngrok base
+    const backendBase = "https://3eff64f367bc.ngrok-free.app"; // ✅ your ngrok base URL
     const loginEndpoint = `${backendBase}/v1/api/auth/login`;
-    
-    // Get redirect_uri & state from Alexa query params
+    const codeEndpoint = `${backendBase}/v1/api/auth/sso/alexa/code`;
+
+    // ✅ Grab redirect info from Alexa query params
     const urlParams = new URLSearchParams(window.location.search);
-    const redirectUri = urlParams.get("redirect_uri") || "alexa-enabled.html";
+    const redirectUri = urlParams.get("redirect_uri") || "https://pitangui.amazon.com/api/skill/link/M1VZ06KRKERWBD";
     const state = urlParams.get("state") || "mock-state";
-    
-    document.getElementById("loginBtn").addEventListener("click", async () => {
+
+    const loginBtn = document.getElementById("loginBtn");
+    const errorDiv = document.getElementById("error");
+    const loadingDiv = document.getElementById("loading");
+
+    loginBtn.addEventListener("click", async () => {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
-      const errorDiv = document.getElementById("error");
       errorDiv.textContent = "";
-      
+      loadingDiv.textContent = "";
+
       if (!email || !password) {
         errorDiv.textContent = "Please enter your email and password.";
         return;
       }
-      
+
       try {
+        loadingDiv.textContent = "Logging in...";
+        loginBtn.disabled = true;
+
+        // Step 1️⃣ — Regular login
         const response = await fetch(loginEndpoint, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true"  // ✅ Bypass ngrok warning page
+            "ngrok-skip-browser-warning": "true"
           },
-          body: JSON.stringify({ email, password, role: "patient" })
+          body: JSON.stringify({ email, password, role: "PATIENT" })
         });
-        
+
         const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || data.message || "Login failed");
-        }
-        
-        const token = data.token;
-        const user = encodeURIComponent(JSON.stringify({ email }));
-        
-        console.log("✅ Login success! Redirecting to Alexa...");
-        
-        // Redirect back to Alexa (or to local mock redirect for testing)
-        // const redirect = `${redirectUri}?code=${encodeURIComponent(token)}&state=${encodeURIComponent(state)}&user=${user}`;
-        // window.location.href = redirect;
+        if (!response.ok) throw new Error(data.error || "Login failed");
+
+        const jwt = data.token;
+        if (!jwt) throw new Error("No token returned from backend.");
+
+        // Step 2️⃣ — Request Alexa temp code
+        loadingDiv.textContent = "Generating authorization code...";
+        const codeResponse = await fetch(codeEndpoint, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${jwt}`,
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true"
+          }
+        });
+
+        const codeData = await codeResponse.json();
+        if (!codeResponse.ok) throw new Error(codeData.error || "Failed to get authorization code.");
+
+        const code = codeData.code;
+        if (!code) throw new Error("No code returned from backend.");
+
+        console.log("✅ Alexa Code:", code);
+
+        // Step 3️⃣ — Redirect back to Alexa with code & state
+        let redirect = `${redirectUri}?code=${encodeURIComponent(code)}`;
+        if (state) redirect += `&state=${encodeURIComponent(state)}`;
+        console.log("🚀 Redirecting to:", redirect);
+
+        loadingDiv.textContent = "Linking your Alexa account...";
+        window.location.href = redirect;
+
       } catch (err) {
-        console.error(err);
-        errorDiv.textContent = "❌ " + err.message;
+        console.error("❌ Error:", err);
+        errorDiv.textContent = err.message || "An unexpected error occurred.";
+      } finally {
+        loadingDiv.textContent = "";
+        loginBtn.disabled = false;
       }
     });
   </script>
