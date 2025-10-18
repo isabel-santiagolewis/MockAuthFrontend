@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CareConnect Login</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #ffffff;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-card {
+      width: 400px;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      text-align: center;
+      background-color: #fff;
+    }
+    .icon {
+      width: 70px;
+      height: 70px;
+      margin-bottom: 1rem;
+      background-color: #7b68ee22;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #7b68ee;
+      font-size: 2rem;
+    }
+    h2 {
+      margin: 0;
+      color: #7b68ee;
+    }
+    p {
+      margin-top: 0.5rem;
+      color: #666;
+    }
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    button {
+      width: 100%;
+      margin-top: 1.5rem;
+      padding: 0.75rem;
+      background-color: #7b68ee;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background-color: #6a5acd;
+    }
+    .error {
+      color: #d33;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="icon">🩺</div>
+    <h2>CareConnect</h2>
+    <p>Closer Connections. Better Care.</p>
+
+    <input id="email" type="email" placeholder="Email" required />
+    <input id="password" type="password" placeholder="Password" required />
+    <button id="loginBtn">Log In</button>
+
+    <div id="error" class="error"></div>
+  </div>
+
+  <script>
+    const backendBase = "https://03ad072af7a4.ngrok-free.app"; // 🔧 Replace with your ngrok base
+    const loginEndpoint = `${backendBase}/v1/api/auth/login`;
+
+    // Get redirect_uri & state from Alexa query params
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirectUri = urlParams.get("redirect_uri") || "alexa-enabled.html";
+    const state = urlParams.get("state") || "mock-state";
+
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const errorDiv = document.getElementById("error");
+      errorDiv.textContent = "";
+
+      if (!email || !password) {
+        errorDiv.textContent = "Please enter your email and password.";
+        return;
+      }
+
+      try {
+        const response = await fetch(loginEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, role: "patient" })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || data.message || "Login failed");
+        }
+
+        const token = data.token;
+        const user = encodeURIComponent(JSON.stringify({ email }));
+
+        console.log("✅ Login success! Redirecting to Alexa...");
+
+        // Redirect back to Alexa (or to local mock redirect for testing)
+        // const redirect = `${redirectUri}?code=${encodeURIComponent(token)}&state=${encodeURIComponent(state)}&user=${user}`;
+        // window.location.href = redirect;
+      } catch (err) {
+        console.error(err);
+        errorDiv.textContent = "❌ " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
